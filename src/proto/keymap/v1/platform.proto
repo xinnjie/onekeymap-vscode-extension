@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package keymap.v1;
+
+// Platform represents the platform type.
+enum Platform {
+  // Unspecified
+  PLATFORM_UNSPECIFIED = 0;
+  // MacOS
+  MACOS = 1;
+  // Windows, not support yet
+  WINDOWS = 2;
+  // Linux, not support yet
+  LINUX = 3;
+}

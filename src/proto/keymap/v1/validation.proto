@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package keymap.v1;
+
+// ValidationReport is the overall report of a validation run.
+message ValidationReport {
+  // The source editor of the validation run.
+  string source_editor = 1;
+  // The summary of the validation run.
+  Summary summary = 2;
+  // The issues detected during the validation run.
+  repeated ValidationIssue issues = 3;
+  // The warnings issued during the validation run.
+  // Warnings are just issues that tend to not harm
+  repeated ValidationIssue warnings = 4;
+}
+
+// Summary is the summary of a validation run.
+message Summary {
+  // The total number of mappings processed.
+  int32 mappings_processed = 1;
+  // The number of mappings that succeeded.
+  int32 mappings_succeeded = 2;
+}
+
+// ValidationIssue is a single issue detected during validation.
+message ValidationIssue {
+  oneof issue {
+    // KeybindConflict is that multiple actions are mapped to the same keybinding.
+    KeybindConflict keybind_conflict = 1;
+    // DanglingAction is that an action is mapped to a keybinding that does not exist.
+    DanglingAction dangling_action = 2;
+    // UnsupportedAction is that an action is mapped to a keybinding that is not supported by the target editor.
+    UnsupportedAction unsupported_action = 3;
+    // DuplicateMapping is that the same action and keybinding combination appears multiple times.
+    DuplicateMapping duplicate_mapping = 4;
+    // PotentialShadowing is that a keybinding might shadow a critical system shortcut.
+    PotentialShadowing potential_shadowing = 5;
+  }
+}
+
+// KeybindConflict is a keybinding conflict detected during validation.
+message KeybindConflict {
+  // Action is an action mapped to a editor command.
+  message Action {
+    // The action identifier.
+    string action = 1;
+    // The editor command.
+    string editor_command = 2;
+  }
+  // The keybinding that is in conflict.
+  string keybinding = 1;
+  // The actions that are in conflict.
+  repeated Action actions = 2;
+}
+
+// DanglingAction is a dangling action detected during validation.
+message DanglingAction {
+  // The action that is dangling.
+  string action = 1;
+  // The keybinding that is dangling.
+  string keybinding = 2;
+  // The suggestion for the dangling action.
+  string suggestion = 3;
+}
+
+// UnsupportedAction is an unsupported action detected during validation.
+message UnsupportedAction {
+  // The action that is unsupported.
+  string action = 1;
+  // The keybinding that is unsupported.
+  string keybinding = 2;
+  // The target editor that the action is unsupported for.
+  string target_editor = 3;
+}
+
+// DuplicateMapping is a duplicate mapping detected during validation.
+message DuplicateMapping {
+  // The action that has duplicate mappings.
+  string action = 1;
+  // The keybinding that is duplicated.
+  string keybinding = 2;
+  // A message describing the issue.
+  string message = 3;
+}
+
+// PotentialShadowing is a keybinding that might shadow a critical system shortcut.
+message PotentialShadowing {
+  // The keybinding that might cause shadowing.
+  string keybinding = 1;
+  // The action mapped to this keybinding.
+  string action = 2;
+  // The target editor where shadowing might occur.
+  string target_editor = 3;
+  // A message describing the potential issue.
+  string message = 4;
+}

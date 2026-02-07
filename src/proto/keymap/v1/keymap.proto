@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+package keymap.v1;
+
+import "google/api/resource.proto";
+import "keymap/v1/keycode.proto";
+import "keymap/v1/editor.proto";
+import "google/api/field_behavior.proto";
+
+// Keymap is the root message, representing a complete set of keybindings.
+message Keymap {
+  option (google.api.resource) = {
+    type: "onekeymap.com/Keymap"
+    pattern: "users/{user}/keymaps/{keymap}"
+  };
+
+  // Keymap name should follow "users/{user}/keymaps/{keymap}" pattern, e.g. users/1234/keymaps/1
+  string name = 1 [
+    (google.api.resource_reference) = {child_type: "keymap.v1.Keymap"},
+    (google.api.field_behavior) = IDENTIFIER
+  ];
+
+  // (-- api-linter: core::0122::embedded-resource=disabled
+  //     aip.dev/not-precedent: Action is a value object, not a separately managed resource --)
+  // The actions.
+  // One action may correspond to multiple keybindings. Then there would be multiple Action
+  // with the same keybinding but different id.
+  // Clients should merge Action that share the same `id` if necessary.
+  repeated Action actions = 2;
+}
+
+// Action represents a single mapping from multiple key bindings to a logical action.
+message Action {
+  // (-- api-linter: core::0122::resource-collection-identifiers=disabled
+  //     aip.dev/not-precedent: Action uses wildcard pattern as it's a value object, not a collection resource --)
+  option (google.api.resource) = {
+    type: "keymap.v1/Action"
+    pattern: "*"
+  };
+  // Action name should follow "keymap/{keymap}/action/{name}" pattern, e.g. keymap/1/action/actions.editor.copy
+  string name = 1[(google.api.field_behavior) = IDENTIFIER];
+
+  // The key bindings that trigger the action.
+  // e.g. ctrl+s, ctrl+shift+s
+  repeated KeybindingReadable bindings = 2;
+
+  // The action config
+  ActionConfig action_config = 3;
+
+  // Optional, user-provided comment for this keymap.
+  string comment = 4;
+}
+
+// KeyChord represents a combination of a primary key and optional modifiers. e.g. "ctrl+s"
+message KeyChord {
+  // The primary, non-modifier key being pressed.
+  KeyCode key_code = 1;
+
+  // A list of modifier keys held down with the primary key.
+  repeated KeyModifier modifiers = 2;
+}
+
+// Keybinding represents a sequence of one or more key chords that must be
+// pressed in order to trigger an action. This allows for multi-key sequences
+// like "shift shift" or "ctrl+k ctrl+s".
+message Keybinding {
+  // The sequence of key chords.
+  repeated KeyChord chords = 1;
+}
+
+// KeybindingReadable represents a single keybinding with its readable string
+message KeybindingReadable {
+  // The key binding that triggers an action.
+  Keybinding key_chords = 1;
+  // The readable key binding that triggers an action. e.g. "ctrl+s"
+  string key_chords_readable = 2;
+}
+
+// ActionConfig represents the configuration of an action.
+message ActionConfig {
+  // name of the action
+  string display_name = 1;
+  // description of the action
+  string description = 2;
+  // category of the action
+  // e.g. "Editor", "Terminal"
+  // Has subcategories if category has ".", e.g. "Editor.Clipboard"
+  string category = 3;
+  // editor support information for this action
+  repeated EditorSupport editor_support = 4;
+
+  // children action ids
+  repeated string children = 5;
+}
+
+// EditorSupport represents whether an action is supported by a specific editor.
+message EditorSupport {
+  // The editor type
+  EditorType editor_type = 1;
+  // Whether this action is supported by the editor
+  bool supported = 2;
+  // Special note of why not supported or supportness
+  string note = 3;
+}
