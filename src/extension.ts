@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { OneKeymapClient } from './client';
+import { KeymapWatcher } from './watcher';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -30,6 +31,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const client = new OneKeymapClient(serverUrl, rootCert);
 	const connected = await client.checkConnection();
+
+	let keymapWatcher: KeymapWatcher | undefined;
 
 	if (connected) {
 		vscode.window.showInformationMessage(`[OneKeyMap] Connected to at ${serverUrl}`);
@@ -57,7 +60,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		console.log(`Watching keybindings at: ${keybindingsPath}`);
 
 		if (fs.existsSync(keybindingsPath)) {
-			watchFile(keybindingsPath, client);
+			keymapWatcher = new KeymapWatcher(keybindingsPath, client);
+			keymapWatcher.start();
+			context.subscriptions.push(keymapWatcher);
 		} else {
 			console.warn(`Keybindings file not found at ${keybindingsPath}`);
 			vscode.window.showWarningMessage(`[OneKeyMap] Keybindings file not found at ${keybindingsPath}`);
@@ -80,48 +85,5 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(disposable);
 }
 
-let fsWatcher: fs.FSWatcher | undefined;
-let debounceTimer: NodeJS.Timeout | undefined;
-
-function watchFile(filePath: string, client: OneKeymapClient) {
-	if (fsWatcher) {
-		fsWatcher.close();
-	}
-
-	try {
-		fsWatcher = fs.watch(filePath, (eventType) => {
-			console.log(`File event: ${eventType} on ${filePath}`);
-			if (eventType === 'change') {
-				if (debounceTimer) clearTimeout(debounceTimer);
-				debounceTimer = setTimeout(() => {
-					console.log(`Debounce finished, syncing ${filePath}`);
-					syncKeymap(filePath, client);
-				}, 1000);
-			}
-		});
-		console.log(`Started watching ${filePath}`);
-	} catch (e) {
-		console.error(`Failed to watch file ${filePath}`, e);
-	}
-}
-
-async function syncKeymap(filePath: string, client: OneKeymapClient) {
-	try {
-		console.log(`Reading file content from ${filePath}`);
-		const content = fs.readFileSync(filePath, 'utf-8');
-		console.log(`Syncing keymap content (${content.length} characters)`);
-		await client.importKeymap(content);
-		console.log('Synced keymap to server successfully');
-		vscode.window.setStatusBarMessage('OneKeymap: Synced', 3000);
-	} catch (e) {
-		console.error('[OneKeyMap] Failed to sync keymap', e);
-		vscode.window.showErrorMessage('[OneKeyMap] Sync failed');
-	}
-}
-
 // This method is called when your extension is deactivated
-export function deactivate() {
-	if (fsWatcher) {
-		fsWatcher.close();
-	}
-}
+export function deactivate() { }
