@@ -17,7 +17,27 @@
         "command": "onekeymap.helloWorld",
         "title": "Hello World"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "OneKeymap",
+      "properties": {
+        "onekeymap.serverUrl": {
+          "type": "string",
+          "default": "onekeymap.xinnjiedev.com:443",
+          "description": "The URL of the OneKeymap server."
+        },
+        "onekeymap.keybindingsPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the keybindings.json file. Leave empty to auto-detect."
+        },
+        "onekeymap.rootCertPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to a custom Root CA certificate (PEM format) for self-signed certificates."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",

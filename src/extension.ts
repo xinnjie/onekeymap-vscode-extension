@@ -15,12 +15,25 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const config = vscode.workspace.getConfiguration('onekeymap');
 	const serverUrl = config.get<string>('serverUrl', 'onekeymap.xinnjiedev.com:443');
+	const rootCertPath = config.get<string>('rootCertPath');
 
-	const client = new OneKeymapClient(serverUrl);
+	let rootCert: Buffer | undefined;
+	if (rootCertPath) {
+		try {
+			rootCert = fs.readFileSync(rootCertPath);
+			console.log(`Loaded root certificate from ${rootCertPath}`);
+		} catch (e) {
+			console.error(`Failed to load root certificate from ${rootCertPath}`, e);
+			vscode.window.showErrorMessage(`[OneKeyMap] Failed to load root certificate from ${rootCertPath}`);
+		}
+	}
+
+	const client = new OneKeymapClient(serverUrl, rootCert);
 	const connected = await client.checkConnection();
 
 	if (connected) {
-		vscode.window.showInformationMessage(`Connected to OneKeymap at ${serverUrl}`);
+		vscode.window.showInformationMessage(`[OneKeyMap] Connected to at ${serverUrl}`);
+		console.log(`Connected to at ${serverUrl}`);
 
 		// Resolve keybindings.json path
 		// Default to standard macOS path for now, but should be configurable
@@ -46,19 +59,22 @@ export async function activate(context: vscode.ExtensionContext) {
 		if (fs.existsSync(keybindingsPath)) {
 			watchFile(keybindingsPath, client);
 		} else {
-			vscode.window.showWarningMessage(`Keybindings file not found at ${keybindingsPath}`);
+			console.warn(`Keybindings file not found at ${keybindingsPath}`);
+			vscode.window.showWarningMessage(`[OneKeyMap] Keybindings file not found at ${keybindingsPath}`);
 		}
 	} else {
-		vscode.window.showErrorMessage(`Failed to connect to OneKeymap at ${serverUrl}`);
+		console.error(`Failed to connect to server at ${serverUrl}`);
+		vscode.window.showErrorMessage(`[OneKeyMap] Failed to connect to OneKeymap at ${serverUrl}`);
 	}
 
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
 	const disposable = vscode.commands.registerCommand('onekeymap.helloWorld', () => {
+		console.log('helloWorld command executed');
 		// The code you place here will be executed every time your command is executed
 		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from onekeymap!');
+		vscode.window.showInformationMessage('[OneKeyMap] Hello World from onekeymap!');
 	});
 
 	context.subscriptions.push(disposable);
@@ -74,9 +90,11 @@ function watchFile(filePath: string, client: OneKeymapClient) {
 
 	try {
 		fsWatcher = fs.watch(filePath, (eventType) => {
+			console.log(`File event: ${eventType} on ${filePath}`);
 			if (eventType === 'change') {
 				if (debounceTimer) clearTimeout(debounceTimer);
 				debounceTimer = setTimeout(() => {
+					console.log(`Debounce finished, syncing ${filePath}`);
 					syncKeymap(filePath, client);
 				}, 1000);
 			}
@@ -89,13 +107,15 @@ function watchFile(filePath: string, client: OneKeymapClient) {
 
 async function syncKeymap(filePath: string, client: OneKeymapClient) {
 	try {
+		console.log(`Reading file content from ${filePath}`);
 		const content = fs.readFileSync(filePath, 'utf-8');
+		console.log(`Syncing keymap content (${content.length} characters)`);
 		await client.importKeymap(content);
-		console.log('Synced keymap to server');
+		console.log('Synced keymap to server successfully');
 		vscode.window.setStatusBarMessage('OneKeymap: Synced', 3000);
 	} catch (e) {
-		console.error('Failed to sync keymap', e);
-		vscode.window.showErrorMessage('OneKeymap: Sync failed');
+		console.error('[OneKeyMap] Failed to sync keymap', e);
+		vscode.window.showErrorMessage('[OneKeyMap] Sync failed');
 	}
 }
 
