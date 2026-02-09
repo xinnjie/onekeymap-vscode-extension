@@ -53,7 +53,7 @@
     "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
-    "gen:proto": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/proto --ts_proto_opt=outputServices=grpc-js,env=node,esModuleInterop=true --proto_path=./src/proto ./src/proto/keymap/v1/*.proto",
+    "gen:proto": "buf generate ../proto --template buf.gen.yaml --include-imports",
     "test": "vscode-test"
   },
   "devDependencies": {
