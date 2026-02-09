@@ -229,18 +229,6 @@ export interface ConfigDetectResponse {
   paths: string[];
 }
 
-/** DetectEditorConfigPathsRequest is the request message for DetectEditorConfigPaths. */
-export interface DetectEditorConfigPathsRequest {
-  /** The editor type. */
-  editorType: EditorType;
-}
-
-/** DetectEditorConfigPathsResponse is the response message for DetectEditorConfigPaths. */
-export interface DetectEditorConfigPathsResponse {
-  /** The detected code config paths on the current system. */
-  paths: string[];
-}
-
 /** GetKeymapRequest is the request message for GetKeymap. */
 export interface GetKeymapRequest {
   /** The config content in onekeymap.json format. */
@@ -1379,132 +1367,6 @@ export const ConfigDetectResponse: MessageFns<ConfigDetectResponse> = {
   },
 };
 
-function createBaseDetectEditorConfigPathsRequest(): DetectEditorConfigPathsRequest {
-  return { editorType: 0 };
-}
-
-export const DetectEditorConfigPathsRequest: MessageFns<DetectEditorConfigPathsRequest> = {
-  encode(message: DetectEditorConfigPathsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.editorType !== 0) {
-      writer.uint32(8).int32(message.editorType);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): DetectEditorConfigPathsRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseDetectEditorConfigPathsRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.editorType = reader.int32() as any;
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): DetectEditorConfigPathsRequest {
-    return {
-      editorType: isSet(object.editorType)
-        ? editorTypeFromJSON(object.editorType)
-        : isSet(object.editor_type)
-        ? editorTypeFromJSON(object.editor_type)
-        : 0,
-    };
-  },
-
-  toJSON(message: DetectEditorConfigPathsRequest): unknown {
-    const obj: any = {};
-    if (message.editorType !== 0) {
-      obj.editorType = editorTypeToJSON(message.editorType);
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<DetectEditorConfigPathsRequest>, I>>(base?: I): DetectEditorConfigPathsRequest {
-    return DetectEditorConfigPathsRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<DetectEditorConfigPathsRequest>, I>>(
-    object: I,
-  ): DetectEditorConfigPathsRequest {
-    const message = createBaseDetectEditorConfigPathsRequest();
-    message.editorType = object.editorType ?? 0;
-    return message;
-  },
-};
-
-function createBaseDetectEditorConfigPathsResponse(): DetectEditorConfigPathsResponse {
-  return { paths: [] };
-}
-
-export const DetectEditorConfigPathsResponse: MessageFns<DetectEditorConfigPathsResponse> = {
-  encode(message: DetectEditorConfigPathsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    for (const v of message.paths) {
-      writer.uint32(10).string(v!);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): DetectEditorConfigPathsResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseDetectEditorConfigPathsResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.paths.push(reader.string());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): DetectEditorConfigPathsResponse {
-    return { paths: globalThis.Array.isArray(object?.paths) ? object.paths.map((e: any) => globalThis.String(e)) : [] };
-  },
-
-  toJSON(message: DetectEditorConfigPathsResponse): unknown {
-    const obj: any = {};
-    if (message.paths?.length) {
-      obj.paths = message.paths;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<DetectEditorConfigPathsResponse>, I>>(base?: I): DetectEditorConfigPathsResponse {
-    return DetectEditorConfigPathsResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<DetectEditorConfigPathsResponse>, I>>(
-    object: I,
-  ): DetectEditorConfigPathsResponse {
-    const message = createBaseDetectEditorConfigPathsResponse();
-    message.paths = object.paths?.map((e) => e) || [];
-    return message;
-  },
-};
-
 function createBaseGetKeymapRequest(): GetKeymapRequest {
   return { config: "", returnAll: false };
 }
@@ -2144,22 +2006,6 @@ export const OnekeymapServiceService = {
     responseDeserialize: (value: Buffer): GenerateEditorConfigResponse => GenerateEditorConfigResponse.decode(value),
   },
   /**
-   * DetectEditorConfigPaths detects the default config paths for an editor on the current system.
-   * It replaces ConfigDetect.
-   */
-  detectEditorConfigPaths: {
-    path: "/keymap.v1.OnekeymapService/DetectEditorConfigPaths",
-    requestStream: false,
-    responseStream: false,
-    requestSerialize: (value: DetectEditorConfigPathsRequest): Buffer =>
-      Buffer.from(DetectEditorConfigPathsRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): DetectEditorConfigPathsRequest => DetectEditorConfigPathsRequest.decode(value),
-    responseSerialize: (value: DetectEditorConfigPathsResponse): Buffer =>
-      Buffer.from(DetectEditorConfigPathsResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): DetectEditorConfigPathsResponse =>
-      DetectEditorConfigPathsResponse.decode(value),
-  },
-  /**
    * ParseKeymap parses the OneKeymap internal format (JSON) into a Keymap object.
    * It replaces GetKeymap.
    */
@@ -2246,11 +2092,6 @@ export interface OnekeymapServiceServer extends UntypedServiceImplementation {
    * It replaces ExportKeymap.
    */
   generateEditorConfig: handleUnaryCall<GenerateEditorConfigRequest, GenerateEditorConfigResponse>;
-  /**
-   * DetectEditorConfigPaths detects the default config paths for an editor on the current system.
-   * It replaces ConfigDetect.
-   */
-  detectEditorConfigPaths: handleUnaryCall<DetectEditorConfigPathsRequest, DetectEditorConfigPathsResponse>;
   /**
    * ParseKeymap parses the OneKeymap internal format (JSON) into a Keymap object.
    * It replaces GetKeymap.
@@ -2417,25 +2258,6 @@ export interface OnekeymapServiceClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: GenerateEditorConfigResponse) => void,
-  ): ClientUnaryCall;
-  /**
-   * DetectEditorConfigPaths detects the default config paths for an editor on the current system.
-   * It replaces ConfigDetect.
-   */
-  detectEditorConfigPaths(
-    request: DetectEditorConfigPathsRequest,
-    callback: (error: ServiceError | null, response: DetectEditorConfigPathsResponse) => void,
-  ): ClientUnaryCall;
-  detectEditorConfigPaths(
-    request: DetectEditorConfigPathsRequest,
-    metadata: Metadata,
-    callback: (error: ServiceError | null, response: DetectEditorConfigPathsResponse) => void,
-  ): ClientUnaryCall;
-  detectEditorConfigPaths(
-    request: DetectEditorConfigPathsRequest,
-    metadata: Metadata,
-    options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: DetectEditorConfigPathsResponse) => void,
   ): ClientUnaryCall;
   /**
    * ParseKeymap parses the OneKeymap internal format (JSON) into a Keymap object.

@@ -32,15 +32,15 @@ export class OneKeymapClient {
     });
   }
 
-  public async importKeymap(content: string): Promise<void> {
+  public async analyzeEditorConfig(content: string): Promise<void> {
     return new Promise((resolve, reject) => {
       // EditorType.VSCODE is 1
-      this.client.importKeymap({ editorType: 1, source: content, base: "" }, (err, response) => {
+      this.client.analyzeEditorConfig({ editorType: 1, sourceContent: content, baseContent: "" }, (err, response) => {
         if (err) {
-          console.error('ImportKeymap failed:', err);
+          console.error('AnalyzeEditorConfig failed:', err);
           reject(err);
         } else {
-          console.log('ImportKeymap success:', response);
+          console.log('AnalyzeEditorConfig success:', response);
           resolve();
         }
       });

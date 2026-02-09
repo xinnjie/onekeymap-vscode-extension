@@ -13,7 +13,7 @@ export class KeymapSyncer {
 			console.log(`Reading file content from ${this.filePath}`);
 			const content = fs.readFileSync(this.filePath, 'utf-8');
 			console.log(`Syncing keymap content (${content.length} characters)`);
-			await this.client.importKeymap(content);
+			await this.client.analyzeEditorConfig(content);
 			console.log('Synced keymap to server successfully');
 			vscode.window.setStatusBarMessage('OneKeymap: Synced', 3000);
 		} catch (e) {
