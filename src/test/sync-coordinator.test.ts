@@ -59,10 +59,10 @@ class MockFileSystem implements FileSystem {
 }
 
 class MockStatusReporter implements StatusReporter {
-	messages: Array<{ message: string; hideAfterMs: number }> = [];
+	messages: string[] = [];
 
-	showStatusMessage(message: string, hideAfterMs: number): void {
-		this.messages.push({ message, hideAfterMs });
+	showStatusMessage(message: string): void {
+		this.messages.push(message);
 	}
 }
 
@@ -157,7 +157,7 @@ suite('SyncCoordinator: onVscodeKeybindingsChanged', () => {
 		assert.strictEqual(fs.writtenFiles.length, 1);
 		assert.strictEqual(fs.writtenFiles[0].path, OK_PATH);
 		assert.strictEqual(fs.writtenFiles[0].content, '{"keymaps":[]}');
-		assert.ok(status.messages.some(m => m.message.includes('Synced from VS Code')));
+		assert.ok(status.messages.some(m => m.includes('Synced from VS Code')));
 	});
 
 	test('passes existing onekeymap keymap as originalConfig', async () => {
@@ -198,7 +198,7 @@ suite('SyncCoordinator: onVscodeKeybindingsChanged', () => {
 
 		await coordinator.onVscodeKeybindingsChanged();
 
-		assert.ok(status.messages.some(m => m.message.includes('Sync failed')));
+		assert.ok(status.messages.some(m => m.includes('Sync failed')));
 	});
 
 	test('skips when content hash matches last written hash (loop prevention)', async () => {
@@ -236,7 +236,7 @@ suite('SyncCoordinator: onOnekeymapConfigChanged', () => {
 		assert.strictEqual(fs.writtenFiles.length, 1);
 		assert.strictEqual(fs.writtenFiles[0].path, KB_PATH);
 		assert.strictEqual(fs.writtenFiles[0].content, '[{"key":"ctrl+s"}]');
-		assert.ok(status.messages.some(m => m.message.includes('Synced from onekeymap.json')));
+		assert.ok(status.messages.some(m => m.includes('Synced from onekeymap.json')));
 	});
 
 	test('skips write when generated content equals current', async () => {
@@ -265,7 +265,7 @@ suite('SyncCoordinator: onOnekeymapConfigChanged', () => {
 
 		await coordinator.onOnekeymapConfigChanged();
 
-		assert.ok(status.messages.some(m => m.message.includes('Sync failed')));
+		assert.ok(status.messages.some(m => m.includes('Sync failed')));
 	});
 
 	test('handles missing keybindings.json gracefully (passes empty string)', async () => {

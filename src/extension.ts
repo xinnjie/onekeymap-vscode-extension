@@ -21,8 +21,8 @@ const nodeFileSystem: FileSystem = {
 };
 
 const vscodeStatusReporter: StatusReporter = {
-	showStatusMessage: (message: string, hideAfterMs: number) => {
-		vscode.window.setStatusBarMessage(message, hideAfterMs);
+	showStatusMessage: (message: string) => {
+		vscode.window.showInformationMessage(message);
 	},
 };
 
@@ -51,7 +51,7 @@ function resolveKeybindingsPath(config: vscode.WorkspaceConfiguration): string {
 }
 
 export async function activate(context: vscode.ExtensionContext) {
-	console.log('[OneKeymap] Extension activating');
+	console.log('Extension activating');
 
 	const config = vscode.workspace.getConfiguration('onekeymap');
 	const serverUrl = config.get<string>('serverUrl', 'onekeymap.xinnjiedev.com:443');
@@ -62,8 +62,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		try {
 			rootCert = fs.readFileSync(rootCertPath);
 		} catch (e) {
-			console.error(`[OneKeymap] Failed to load root certificate from ${rootCertPath}`, e);
-			vscode.window.showErrorMessage(`[OneKeymap] Failed to load root certificate from ${rootCertPath}`);
+			console.error(`Failed to load root certificate from ${rootCertPath}`, e);
+			vscode.window.showErrorMessage(`OneKeymap: Failed to load root certificate from ${rootCertPath}`);
 		}
 	}
 
@@ -71,24 +71,24 @@ export async function activate(context: vscode.ExtensionContext) {
 	const connected = await client.checkConnection();
 
 	if (!connected) {
-		console.error(`[OneKeymap] Failed to connect to server at ${serverUrl}`);
-		vscode.window.showErrorMessage(`[OneKeymap] Failed to connect to server at ${serverUrl}`);
+		console.error(`Failed to connect to server at ${serverUrl}`);
+		vscode.window.showErrorMessage(`OneKeymap: Failed to connect to server at ${serverUrl}`);
 		return;
 	}
 
-	console.log(`[OneKeymap] Connected to ${serverUrl}`);
+	console.log(`Connected to ${serverUrl}`);
 
 	const keybindingsPath = resolveKeybindingsPath(config);
 	const onekeymapConfigPath = resolveHome(
 		config.get<string>('onekeymapConfigPath', DEFAULT_ONEKEYMAP_CONFIG_PATH),
 	);
 
-	console.log(`[OneKeymap] keybindings.json: ${keybindingsPath}`);
-	console.log(`[OneKeymap] onekeymap.json: ${onekeymapConfigPath}`);
+	console.log(`keybindings.json: ${keybindingsPath}`);
+	console.log(`onekeymap.json: ${onekeymapConfigPath}`);
 
 	if (!fs.existsSync(keybindingsPath)) {
-		console.warn(`[OneKeymap] keybindings.json not found at ${keybindingsPath}`);
-		vscode.window.showWarningMessage(`[OneKeymap] keybindings.json not found at ${keybindingsPath}`);
+		console.warn(`keybindings.json not found at ${keybindingsPath}`);
+		vscode.window.showWarningMessage(`OneKeymap: keybindings.json not found at ${keybindingsPath}`);
 		return;
 	}
 
@@ -114,7 +114,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const syncCommand = vscode.commands.registerCommand('onekeymap.sync', async () => {
 		await coordinator.onVscodeKeybindingsChanged();
-		vscode.window.showInformationMessage('[OneKeymap] Manual sync triggered');
+		vscode.window.showInformationMessage('OneKeymap: Manual sync triggered');
 	});
 	context.subscriptions.push(syncCommand);
 }

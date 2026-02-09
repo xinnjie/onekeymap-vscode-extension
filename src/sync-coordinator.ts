@@ -16,7 +16,7 @@ export interface FileSystem {
 }
 
 export interface StatusReporter {
-	showStatusMessage(message: string, hideAfterMs: number): void;
+	showStatusMessage(message: string): void;
 }
 
 export interface KeymapClient {
@@ -61,6 +61,7 @@ export class SyncCoordinator {
 
 	public async onVscodeKeybindingsChanged(): Promise<void> {
 		if (this.syncing) {
+			console.debug('Skipping VS Code → onekeymap.json sync: already syncing');
 			return;
 		}
 
@@ -68,29 +69,37 @@ export class SyncCoordinator {
 		try {
 			content = this.fileSystem.readFile(this.keybindingsPath);
 		} catch (e) {
-			console.error(`[OneKeymap] Failed to read ${this.keybindingsPath}`, e);
+			console.error(`Failed to read ${this.keybindingsPath}`, e);
 			return;
 		}
 
 		const hash = contentHash(content);
 		if (this.lastWrittenHash.get(this.keybindingsPath) === hash) {
+			console.debug('Skipping VS Code → onekeymap.json sync: content hash matches last written');
 			return;
 		}
+
+		console.debug('VS Code keybindings changed, starting sync');
 
 		try {
 			const currentOnekeymapKeymap = await this.loadOnekeymapKeymap();
 
 			const analyzeResponse = await this.client.analyzeEditorConfig(content, currentOnekeymapKeymap ?? undefined);
 			if (!analyzeResponse.keymap) {
-				console.warn('[OneKeymap] AnalyzeEditorConfig returned no keymap');
+				console.warn('AnalyzeEditorConfig returned no keymap');
 				return;
 			}
 
 			const changes = analyzeResponse.changes;
+			const summary = formatChangeSummary(changes);
 			if (changes && changes.add.length === 0 && changes.remove.length === 0 && changes.update.length === 0) {
-				console.log('[OneKeymap] No changes detected from VS Code keybindings');
+				console.debug('No changes detected from VS Code keybindings (hash change only or no structural changes)');
+				// still update hash to avoid re-analyzing
+				this.lastWrittenHash.set(this.keybindingsPath, hash);
 				return;
 			}
+
+			console.debug(`Analyzed keybindings: ${summary}`);
 
 			const generateResponse = await this.client.generateKeymap(analyzeResponse.keymap);
 			const newOnekeymapContent = generateResponse.content;
@@ -98,23 +107,25 @@ export class SyncCoordinator {
 			this.syncing = true;
 			try {
 				this.fileSystem.ensureDir(this.onekeymapPath);
-				this.lastWrittenHash.set(this.onekeymapPath, contentHash(newOnekeymapContent));
+				const newHash = contentHash(newOnekeymapContent);
+				this.lastWrittenHash.set(this.onekeymapPath, newHash);
 				this.fileSystem.writeFile(this.onekeymapPath, newOnekeymapContent);
+				console.info(`Wrote update to ${this.onekeymapPath} (hash: ${newHash.slice(0, 8)})`);
 			} finally {
 				this.syncing = false;
 			}
 
-			const summary = formatChangeSummary(changes);
-			this.status.showStatusMessage(`OneKeymap: Synced from VS Code (${summary})`, 5000);
-			console.log(`[OneKeymap] Synced VS Code → onekeymap.json (${summary})`);
+			this.status.showStatusMessage(`OneKeymap: Synced from VS Code (${summary})`);
+			console.info(`Synced VS Code → onekeymap.json (${summary})`);
 		} catch (e) {
-			console.error('[OneKeymap] Failed to sync VS Code → onekeymap.json', e);
-			this.status.showStatusMessage('OneKeymap: Sync failed (VS Code → onekeymap)', 5000);
+			console.error('Failed to sync VS Code → onekeymap.json', e);
+			this.status.showStatusMessage('OneKeymap: Sync failed (VS Code → onekeymap)');
 		}
 	}
 
 	public async onOnekeymapConfigChanged(): Promise<void> {
 		if (this.syncing) {
+			console.debug('Skipping onekeymap.json → VS Code sync: already syncing');
 			return;
 		}
 
@@ -122,19 +133,22 @@ export class SyncCoordinator {
 		try {
 			content = this.fileSystem.readFile(this.onekeymapPath);
 		} catch (e) {
-			console.error(`[OneKeymap] Failed to read ${this.onekeymapPath}`, e);
+			console.error(`Failed to read ${this.onekeymapPath}`, e);
 			return;
 		}
 
 		const hash = contentHash(content);
 		if (this.lastWrittenHash.get(this.onekeymapPath) === hash) {
+			console.debug('Skipping onekeymap.json → VS Code sync: content hash matches last written');
 			return;
 		}
+
+		console.debug('onekeymap.json changed, starting sync');
 
 		try {
 			const parseResponse = await this.client.parseKeymap(content);
 			if (!parseResponse.keymap) {
-				console.warn('[OneKeymap] ParseKeymap returned no keymap');
+				console.warn('ParseKeymap returned no keymap');
 				return;
 			}
 
@@ -145,27 +159,30 @@ export class SyncCoordinator {
 				// keybindings.json may not exist yet
 			}
 
+			console.debug('Generating editor configuration from unified keymap');
 			const generateResponse = await this.client.generateEditorConfig(parseResponse.keymap, currentVscodeContent);
 			const newVscodeContent = generateResponse.content;
 
 			if (newVscodeContent === currentVscodeContent) {
-				console.log('[OneKeymap] No changes to write to keybindings.json');
+				console.debug('No changes to write to keybindings.json');
 				return;
 			}
 
 			this.syncing = true;
 			try {
-				this.lastWrittenHash.set(this.keybindingsPath, contentHash(newVscodeContent));
+				const newHash = contentHash(newVscodeContent);
+				this.lastWrittenHash.set(this.keybindingsPath, newHash);
 				this.fileSystem.writeFile(this.keybindingsPath, newVscodeContent);
+				console.info(`Wrote update to ${this.keybindingsPath} (hash: ${newHash.slice(0, 8)})`);
 			} finally {
 				this.syncing = false;
 			}
 
-			this.status.showStatusMessage('OneKeymap: Synced from onekeymap.json', 5000);
-			console.log('[OneKeymap] Synced onekeymap.json → VS Code');
+			this.status.showStatusMessage('OneKeymap: Synced from onekeymap.json');
+			console.info('Synced onekeymap.json → VS Code');
 		} catch (e) {
-			console.error('[OneKeymap] Failed to sync onekeymap.json → VS Code', e);
-			this.status.showStatusMessage('OneKeymap: Sync failed (onekeymap → VS Code)', 5000);
+			console.error('Failed to sync onekeymap.json → VS Code', e);
+			this.status.showStatusMessage('OneKeymap: Sync failed (onekeymap → VS Code)');
 		}
 	}
 
@@ -174,8 +191,10 @@ export class SyncCoordinator {
 		const keybindingsExists = this.fileSystem.exists(this.keybindingsPath);
 
 		if (!onekeymapExists && keybindingsExists) {
-			console.log('[OneKeymap] onekeymap.json not found, creating from current VS Code keybindings');
+			console.log('onekeymap.json not found, creating from current VS Code keybindings');
 			await this.onVscodeKeybindingsChanged();
+		} else {
+			console.log(`Initialization: onekeymap.json exists: ${onekeymapExists}, keybindings.json exists: ${keybindingsExists}`);
 		}
 	}
 
