@@ -5,8 +5,8 @@ import type {
 	GenerateKeymapResponse,
 	KeymapChanges,
 	ParseKeymapResponse,
-} from './proto/keymap/v1/onekeymap_service';
-import type { Keymap } from './proto/keymap/v1/keymap';
+} from 'src/proto/keymap/v1/onekeymap_service';
+import type { Keymap } from 'src/proto/keymap/v1/keymap';
 
 export interface FileSystem {
 	readFile(path: string): string;

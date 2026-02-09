@@ -1,5 +1,5 @@
 
-import { OneKeymapClient } from './client';
+import { OneKeymapClient } from 'src/client';
 import * as fs from 'fs';
 import * as path from 'path';
 

@@ -2,9 +2,9 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { OneKeymapClient } from './client';
-import { KeymapWatcher } from './watcher';
-import { SyncCoordinator, type FileSystem, type StatusReporter } from './sync-coordinator';
+import { OneKeymapClient } from 'src/client';
+import { KeymapWatcher } from 'src/watcher';
+import { SyncCoordinator, type FileSystem, type StatusReporter } from 'src/sync-coordinator';
 
 const DEFAULT_ONEKEYMAP_CONFIG_PATH = '~/.config/onekeymap/onekeymap.json';
 

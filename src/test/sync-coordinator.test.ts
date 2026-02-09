@@ -5,15 +5,15 @@ import {
 	type FileSystem,
 	type StatusReporter,
 	type KeymapClient,
-} from '../sync-coordinator';
+} from 'src/sync-coordinator';
 import type {
 	AnalyzeEditorConfigResponse,
 	GenerateEditorConfigResponse,
 	GenerateKeymapResponse,
 	KeymapChanges,
 	ParseKeymapResponse,
-} from '../proto/keymap/v1/onekeymap_service';
-import type { Action, Keymap } from '../proto/keymap/v1/keymap';
+} from 'src/proto/keymap/v1/onekeymap_service';
+import type { Action, Keymap } from 'src/proto/keymap/v1/keymap';
 
 function makeKeymap(name: string): Keymap {
 	return { name, actions: [] };

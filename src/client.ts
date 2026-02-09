@@ -6,9 +6,9 @@ import {
   type GenerateKeymapResponse,
   GenerateEditorConfigRequest_DiffType,
   type ParseKeymapResponse,
-} from './proto/keymap/v1/onekeymap_service';
-import { EditorType } from './proto/keymap/v1/editor';
-import { type Keymap } from './proto/keymap/v1/keymap';
+} from 'src/proto/keymap/v1/onekeymap_service';
+import { EditorType } from 'src/proto/keymap/v1/editor';
+import { type Keymap } from 'src/proto/keymap/v1/keymap';
 
 export class OneKeymapClient {
   private client: OnekeymapServiceClient;
