@@ -14,12 +14,7 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "onekeymap.helloWorld",
-        "title": "Hello World"
-      }
-    ],
+    "commands": [],
     "configuration": {
       "title": "OneKeymap",
       "properties": {
