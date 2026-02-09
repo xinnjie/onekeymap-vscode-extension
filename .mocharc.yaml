@@ -1,0 +1,4 @@
+require: tsx
+spec: src/test/sync-coordinator.test.ts
+timeout: 5000
+ui: tdd

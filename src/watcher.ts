@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { KeymapSyncer } from './syncer';
+
+export type FileChangedCallback = () => Promise<void>;
 
 export class KeymapWatcher implements vscode.Disposable {
 	private watcher: fs.FSWatcher | undefined;
@@ -8,7 +9,7 @@ export class KeymapWatcher implements vscode.Disposable {
 
 	constructor(
 		private readonly filePath: string,
-		private readonly syncer: KeymapSyncer
+		private readonly onChanged: FileChangedCallback,
 	) { }
 
 	public start() {
@@ -71,7 +72,7 @@ export class KeymapWatcher implements vscode.Disposable {
 
 		this.debounceTimer = setTimeout(() => {
 			console.log(`Debounce finished, syncing ${this.filePath}`);
-			this.syncer.sync();
+			this.onChanged();
 		}, 1000);
 	}
 }

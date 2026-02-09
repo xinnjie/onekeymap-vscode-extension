@@ -1,6 +1,14 @@
 import * as grpc from '@grpc/grpc-js';
-import { OnekeymapServiceClient, ConfigDetectRequest } from './proto/keymap/v1/onekeymap_service';
+import {
+  OnekeymapServiceClient,
+  type AnalyzeEditorConfigResponse,
+  type GenerateEditorConfigResponse,
+  type GenerateKeymapResponse,
+  GenerateEditorConfigRequest_DiffType,
+  type ParseKeymapResponse,
+} from './proto/keymap/v1/onekeymap_service';
 import { EditorType } from './proto/keymap/v1/editor';
+import { type Keymap } from './proto/keymap/v1/keymap';
 
 export class OneKeymapClient {
   private client: OnekeymapServiceClient;
@@ -32,18 +40,69 @@ export class OneKeymapClient {
     });
   }
 
-  public async analyzeEditorConfig(content: string): Promise<void> {
+  public async analyzeEditorConfig(content: string, originalConfig?: Keymap): Promise<AnalyzeEditorConfigResponse> {
     return new Promise((resolve, reject) => {
-      // EditorType.VSCODE is 1
-      this.client.analyzeEditorConfig({ editorType: 1, sourceContent: content, baseContent: "" }, (err, response) => {
-        if (err) {
-          console.error('AnalyzeEditorConfig failed:', err);
-          reject(err);
-        } else {
-          console.log('AnalyzeEditorConfig success:', response);
-          resolve();
-        }
-      });
+      this.client.analyzeEditorConfig(
+        { editorType: EditorType.VSCODE, sourceContent: content, baseContent: "", originalConfig },
+        (err, response) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(response!);
+          }
+        },
+      );
+    });
+  }
+
+  public async generateEditorConfig(keymap: Keymap, originalContent: string): Promise<GenerateEditorConfigResponse> {
+    return new Promise((resolve, reject) => {
+      this.client.generateEditorConfig(
+        {
+          editorType: EditorType.VSCODE,
+          keymap,
+          originalContent,
+          diffType: GenerateEditorConfigRequest_DiffType.DIFF_TYPE_UNSPECIFIED,
+          filePath: "",
+        },
+        (err, response) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(response!);
+          }
+        },
+      );
+    });
+  }
+
+  public async parseKeymap(content: string): Promise<ParseKeymapResponse> {
+    return new Promise((resolve, reject) => {
+      this.client.parseKeymap(
+        { content, includeAllActions: false },
+        (err, response) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(response!);
+          }
+        },
+      );
+    });
+  }
+
+  public async generateKeymap(keymap: Keymap): Promise<GenerateKeymapResponse> {
+    return new Promise((resolve, reject) => {
+      this.client.generateKeymap(
+        { keymap },
+        (err, response) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(response!);
+          }
+        },
+      );
     });
   }
 

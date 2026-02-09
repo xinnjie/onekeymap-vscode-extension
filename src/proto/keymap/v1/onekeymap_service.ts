@@ -49,8 +49,14 @@ export interface AnalyzeEditorConfigRequest {
   editorType: EditorType;
   /** The source keymap file content in editor-specific config syntax. */
   sourceContent: string;
-  /** The base keymap content (in OneKeymap JSON format) to compare against. */
+  /**
+   * The base keymap content (in OneKeymap JSON format) to compare against.
+   *
+   * @deprecated
+   */
   baseContent: string;
+  /** The original keymap to compare against. */
+  originalConfig: Keymap | undefined;
 }
 
 /** AnalyzeEditorConfigResponse is the response message for AnalyzeEditorConfig. */
@@ -458,7 +464,7 @@ export const ImportKeymapResponse: MessageFns<ImportKeymapResponse> = {
 };
 
 function createBaseAnalyzeEditorConfigRequest(): AnalyzeEditorConfigRequest {
-  return { editorType: 0, sourceContent: "", baseContent: "" };
+  return { editorType: 0, sourceContent: "", baseContent: "", originalConfig: undefined };
 }
 
 export const AnalyzeEditorConfigRequest: MessageFns<AnalyzeEditorConfigRequest> = {
@@ -471,6 +477,9 @@ export const AnalyzeEditorConfigRequest: MessageFns<AnalyzeEditorConfigRequest> 
     }
     if (message.baseContent !== "") {
       writer.uint32(26).string(message.baseContent);
+    }
+    if (message.originalConfig !== undefined) {
+      Keymap.encode(message.originalConfig, writer.uint32(34).fork()).join();
     }
     return writer;
   },
@@ -506,6 +515,14 @@ export const AnalyzeEditorConfigRequest: MessageFns<AnalyzeEditorConfigRequest> 
           message.baseContent = reader.string();
           continue;
         }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.originalConfig = Keymap.decode(reader, reader.uint32());
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -532,6 +549,11 @@ export const AnalyzeEditorConfigRequest: MessageFns<AnalyzeEditorConfigRequest> 
         : isSet(object.base_content)
         ? globalThis.String(object.base_content)
         : "",
+      originalConfig: isSet(object.originalConfig)
+        ? Keymap.fromJSON(object.originalConfig)
+        : isSet(object.original_config)
+        ? Keymap.fromJSON(object.original_config)
+        : undefined,
     };
   },
 
@@ -546,6 +568,9 @@ export const AnalyzeEditorConfigRequest: MessageFns<AnalyzeEditorConfigRequest> 
     if (message.baseContent !== "") {
       obj.baseContent = message.baseContent;
     }
+    if (message.originalConfig !== undefined) {
+      obj.originalConfig = Keymap.toJSON(message.originalConfig);
+    }
     return obj;
   },
 
@@ -557,6 +582,9 @@ export const AnalyzeEditorConfigRequest: MessageFns<AnalyzeEditorConfigRequest> 
     message.editorType = object.editorType ?? 0;
     message.sourceContent = object.sourceContent ?? "";
     message.baseContent = object.baseContent ?? "";
+    message.originalConfig = (object.originalConfig !== undefined && object.originalConfig !== null)
+      ? Keymap.fromPartial(object.originalConfig)
+      : undefined;
     return message;
   },
 };
@@ -1978,6 +2006,15 @@ export const OnekeymapServiceService = {
   /**
    * AnalyzeEditorConfig parses an editor-specific config and compares it with a base keymap.
    * It replaces ImportKeymap.
+   *
+   * Handling Existing Configurations:
+   * It reads configuration from the input stream (e.g., editor specific config like keybindings.json)
+   * and analyzes it to map keybindings to the universal format.
+   *
+   * Conflict Resolution:
+   * - Conflicts during conversion (e.g., multiple keybindings mapping to the same action)
+   *   are resolved by the implementation, typically by deduplicating actions.
+   * - Any unmapped actions or ambiguities are reported in the response.
    */
   analyzeEditorConfig: {
     path: "/keymap.v1.OnekeymapService/AnalyzeEditorConfig",
@@ -1993,6 +2030,16 @@ export const OnekeymapServiceService = {
   /**
    * GenerateEditorConfig generates an editor-specific config from a keymap.
    * It replaces ExportKeymap.
+   *
+   * Handling Existing Configurations:
+   * It generates the editor-specific configuration content based on the provided universal keymap.
+   * If original content is supplied, it is used to calculate the differences (diff) between the
+   * current state and the new configuration.
+   *
+   * Conflict Resolution:
+   * - The universal keymap is the authoritative source.
+   * - The generation process ensures that the output format is valid for the target editor,
+   *   handling any necessary conversions or fallback strategies for unsupported keys.
    */
   generateEditorConfig: {
     path: "/keymap.v1.OnekeymapService/GenerateEditorConfig",
@@ -2085,11 +2132,30 @@ export interface OnekeymapServiceServer extends UntypedServiceImplementation {
   /**
    * AnalyzeEditorConfig parses an editor-specific config and compares it with a base keymap.
    * It replaces ImportKeymap.
+   *
+   * Handling Existing Configurations:
+   * It reads configuration from the input stream (e.g., editor specific config like keybindings.json)
+   * and analyzes it to map keybindings to the universal format.
+   *
+   * Conflict Resolution:
+   * - Conflicts during conversion (e.g., multiple keybindings mapping to the same action)
+   *   are resolved by the implementation, typically by deduplicating actions.
+   * - Any unmapped actions or ambiguities are reported in the response.
    */
   analyzeEditorConfig: handleUnaryCall<AnalyzeEditorConfigRequest, AnalyzeEditorConfigResponse>;
   /**
    * GenerateEditorConfig generates an editor-specific config from a keymap.
    * It replaces ExportKeymap.
+   *
+   * Handling Existing Configurations:
+   * It generates the editor-specific configuration content based on the provided universal keymap.
+   * If original content is supplied, it is used to calculate the differences (diff) between the
+   * current state and the new configuration.
+   *
+   * Conflict Resolution:
+   * - The universal keymap is the authoritative source.
+   * - The generation process ensures that the output format is valid for the target editor,
+   *   handling any necessary conversions or fallback strategies for unsupported keys.
    */
   generateEditorConfig: handleUnaryCall<GenerateEditorConfigRequest, GenerateEditorConfigResponse>;
   /**
@@ -2224,6 +2290,15 @@ export interface OnekeymapServiceClient extends Client {
   /**
    * AnalyzeEditorConfig parses an editor-specific config and compares it with a base keymap.
    * It replaces ImportKeymap.
+   *
+   * Handling Existing Configurations:
+   * It reads configuration from the input stream (e.g., editor specific config like keybindings.json)
+   * and analyzes it to map keybindings to the universal format.
+   *
+   * Conflict Resolution:
+   * - Conflicts during conversion (e.g., multiple keybindings mapping to the same action)
+   *   are resolved by the implementation, typically by deduplicating actions.
+   * - Any unmapped actions or ambiguities are reported in the response.
    */
   analyzeEditorConfig(
     request: AnalyzeEditorConfigRequest,
@@ -2243,6 +2318,16 @@ export interface OnekeymapServiceClient extends Client {
   /**
    * GenerateEditorConfig generates an editor-specific config from a keymap.
    * It replaces ExportKeymap.
+   *
+   * Handling Existing Configurations:
+   * It generates the editor-specific configuration content based on the provided universal keymap.
+   * If original content is supplied, it is used to calculate the differences (diff) between the
+   * current state and the new configuration.
+   *
+   * Conflict Resolution:
+   * - The universal keymap is the authoritative source.
+   * - The generation process ensures that the output format is valid for the target editor,
+   *   handling any necessary conversions or fallback strategies for unsupported keys.
    */
   generateEditorConfig(
     request: GenerateEditorConfigRequest,

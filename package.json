@@ -33,6 +33,11 @@
           "default": "",
           "description": "Path to the keybindings.json file. Leave empty to auto-detect."
         },
+        "onekeymap.onekeymapConfigPath": {
+          "type": "string",
+          "default": "~/.config/onekeymap/onekeymap.json",
+          "description": "Path to the shared OneKeymap configuration file."
+        },
         "onekeymap.rootCertPath": {
           "type": "string",
           "default": "",
@@ -54,11 +59,13 @@
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
     "gen:proto": "buf generate ../proto --template buf.gen.yaml --include-imports",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "test:unit": "mocha"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
+    "@types/sinon": "^21.0.0",
     "@types/vscode": "^1.105.0",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",
@@ -66,8 +73,12 @@
     "@vscode/test-electron": "^2.5.2",
     "esbuild": "^0.25.10",
     "eslint": "^9.36.0",
+    "mocha": "^11.7.5",
     "npm-run-all": "^4.1.5",
+    "sinon": "^21.0.1",
+    "ts-node": "^10.9.2",
     "ts-proto": "^2.11.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {
