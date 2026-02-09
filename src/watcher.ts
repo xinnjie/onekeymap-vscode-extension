@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { OneKeymapClient } from './client';
+import { KeymapSyncer } from './syncer';
 
 export class KeymapWatcher implements vscode.Disposable {
 	private watcher: fs.FSWatcher | undefined;
@@ -8,7 +8,7 @@ export class KeymapWatcher implements vscode.Disposable {
 
 	constructor(
 		private readonly filePath: string,
-		private readonly client: OneKeymapClient
+		private readonly syncer: KeymapSyncer
 	) { }
 
 	public start() {
@@ -71,21 +71,7 @@ export class KeymapWatcher implements vscode.Disposable {
 
 		this.debounceTimer = setTimeout(() => {
 			console.log(`Debounce finished, syncing ${this.filePath}`);
-			this.syncKeymap();
+			this.syncer.sync();
 		}, 1000);
-	}
-
-	private async syncKeymap() {
-		try {
-			console.log(`Reading file content from ${this.filePath}`);
-			const content = fs.readFileSync(this.filePath, 'utf-8');
-			console.log(`Syncing keymap content (${content.length} characters)`);
-			await this.client.importKeymap(content);
-			console.log('Synced keymap to server successfully');
-			vscode.window.setStatusBarMessage('OneKeymap: Synced', 3000);
-		} catch (e) {
-			console.error('[OneKeyMap] Failed to sync keymap', e);
-			vscode.window.showErrorMessage('[OneKeyMap] Sync failed');
-		}
 	}
 }

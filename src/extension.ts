@@ -6,6 +6,7 @@ import * as path from 'path';
 
 import { OneKeymapClient } from './client';
 import { KeymapWatcher } from './watcher';
+import { KeymapSyncer } from './syncer';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -33,6 +34,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	const connected = await client.checkConnection();
 
 	let keymapWatcher: KeymapWatcher | undefined;
+	let keymapSyncer: KeymapSyncer | undefined;
 
 	if (connected) {
 		vscode.window.showInformationMessage(`[OneKeyMap] Connected to at ${serverUrl}`);
@@ -60,7 +62,8 @@ export async function activate(context: vscode.ExtensionContext) {
 		console.log(`Watching keybindings at: ${keybindingsPath}`);
 
 		if (fs.existsSync(keybindingsPath)) {
-			keymapWatcher = new KeymapWatcher(keybindingsPath, client);
+			keymapSyncer = new KeymapSyncer(keybindingsPath, client);
+			keymapWatcher = new KeymapWatcher(keybindingsPath, keymapSyncer);
 			keymapWatcher.start();
 			context.subscriptions.push(keymapWatcher);
 		} else {
@@ -72,6 +75,16 @@ export async function activate(context: vscode.ExtensionContext) {
 		vscode.window.showErrorMessage(`[OneKeyMap] Failed to connect to OneKeymap at ${serverUrl}`);
 	}
 
+	const syncCommand = vscode.commands.registerCommand('onekeymap.sync', async () => {
+		if (keymapSyncer) {
+			await keymapSyncer.sync();
+			vscode.window.showInformationMessage('[OneKeyMap] Manual sync triggered');
+		} else {
+			vscode.window.showWarningMessage('[OneKeyMap] Sync not available (connection or file not found)');
+		}
+	});
+
+	context.subscriptions.push(syncCommand);
 }
 
 // This method is called when your extension is deactivated

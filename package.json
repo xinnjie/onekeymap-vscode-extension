@@ -14,7 +14,12 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
-    "commands": [],
+    "commands": [
+      {
+        "command": "onekeymap.sync",
+        "title": "OneKeymap: Sync Now"
+      }
+    ],
     "configuration": {
       "title": "OneKeymap",
       "properties": {
