@@ -25,7 +25,7 @@
       "properties": {
         "onekeymap.serverUrl": {
           "type": "string",
-          "default": "onekeymap.xinnjiedev.com:443",
+          "default": "onekeymapapi.xinnjiedev.com:443",
           "description": "The URL of the OneKeymap server."
         },
         "onekeymap.keybindingsPath": {

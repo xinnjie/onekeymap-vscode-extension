@@ -54,7 +54,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	console.log('Extension activating');
 
 	const config = vscode.workspace.getConfiguration('onekeymap');
-	const serverUrl = config.get<string>('serverUrl', 'onekeymap.xinnjiedev.com:443');
+	const serverUrl = config.get<string>('serverUrl', 'onekeymapapi.xinnjiedev.com:443');
 	const rootCertPath = config.get<string>('rootCertPath');
 
 	let rootCert: Buffer | undefined;

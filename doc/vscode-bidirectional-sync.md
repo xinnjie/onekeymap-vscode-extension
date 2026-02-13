@@ -99,7 +99,7 @@ On first activation, if `onekeymap.json` does not exist but `keybindings.json` d
 |---|---|---|
 | `onekeymap.onekeymapConfigPath` | `~/.config/onekeymap/onekeymap.json` | Path to the shared OneKeymap config |
 | `onekeymap.keybindingsPath` | (auto-detect per OS) | Path to VS Code `keybindings.json` |
-| `onekeymap.serverUrl` | `onekeymap.xinnjiedev.com:443` | gRPC server URL |
+| `onekeymap.serverUrl` | `onekeymapapi.xinnjiedev.com:443` | gRPC server URL |
 | `onekeymap.rootCertPath` | (empty) | Custom root CA certificate |
 
 ## gRPC API Usage

@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 async function main() {
-    const serverUrl = 'onekeymap.xinnjiedev.com:443';
+    const serverUrl = 'onekeymapapi.xinnjiedev.com:443';
     console.log(`Testing connection to ${serverUrl}...`);
 
     // Load root CA for dev environment
